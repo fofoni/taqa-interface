@@ -1,0 +1,4 @@
+CODEC
+
+C:\Users\Pedro\Downloads\Berimbau-vl.wav
+C:\Users\Pedro\Downloads\Berimbau-vl__20kHz__128k.wav
