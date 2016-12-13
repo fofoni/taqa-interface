@@ -58,11 +58,12 @@ class FileSelectWidget(QtGui.QWidget):
 
 class ComparaçãoDialog(QtGui.QDialog):
     playbtn_height = 42
-    sleep_resolution = 0.1
+    sleep_resolution = 0.03
     def __init__(self, parent, índice, tipo, arquivos, noprev=False):
         super().__init__(parent)
         self.arquivos = arquivos
         self.listenedto = [False for i in range(2)]
+        self.givenup = False
         layout = QtGui.QVBoxLayout()
         self.enunciado = QtGui.QLabel(""
             "<b>{})</b> ".format(índice) + MSGS[tipo],
@@ -109,18 +110,27 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.next_but.setDisabled(True)
         self.slide.sliderReleased.connect(
             lambda: self.next_but.setDisabled(False))
+        self.slide.valueChanged.connect(
+            lambda: self.next_but.setDisabled(False))
         butbox.addWidget(self.next_but)
         layout.addLayout(butbox)
         self.setLayout(layout)
     def click_playbtn(self, checked, i):
         j = 1 if i==0 else 0
+        self.play_buttons[0].setDisabled(True)
+        self.play_buttons[1].setDisabled(True)
         if checked:
             if self.play_buttons[j].isChecked():
+                self.givenup = True
                 self.stop(j)
-                #self.play_buttons[j].setChecked(False)
+                self.play_buttons[j].setChecked(False)
+            self.givenup = False
             self.play(i)
         else:
+            self.givenup = True
             self.stop(i)
+        self.play_buttons[0].setDisabled(False)
+        self.play_buttons[1].setDisabled(False)
     click_orig = lambda self, checked: self.click_playbtn(checked, 0)
     click_deg  = lambda self, checked: self.click_playbtn(checked, 1)
     def __enter__(self):
@@ -153,7 +163,8 @@ class ComparaçãoDialog(QtGui.QDialog):
             return (data,
                     pyaudio.paContinue if len(data)>0 else pyaudio.paComplete)
         self.stream = self.p.open(
-                    format=self.p.get_format_from_width(self.wf[i].getsampwidth()),
+                    format=self.p.get_format_from_width(
+                        self.wf[i].getsampwidth()),
                     channels=self.wf[i].getnchannels(),
                     rate=self.wf[i].getframerate(),
                     output=True,
@@ -184,9 +195,15 @@ class ComparaçãoDialog(QtGui.QDialog):
     def controlloop(dialog, delta, i):
         try:
             while 'stream' in dir(dialog) and dialog.stream.is_active():
+                if dialog.givenup:
+                    dialog.givenup = False
+                    return
                 time.sleep(delta)
         except OSError:
-            pass
+            return
+        if dialog.givenup:
+            dialog.givenup = False
+            return
         dialog.complete(i)
 
 # Janela para iniciar uma sessão de Testes Subjetivos
@@ -227,7 +244,7 @@ class SessãoTS(QtGui.QWidget):
         self.file_seq.textChanged.connect(self.valida_campos)
         self.line_tester.textChanged.connect(self.valida_campos)
         self.line_super.textChanged.connect(self.valida_campos)
-        self.begin_button.clicked.connect(self.begin_sess)
+        self.begin_button.clicked.connect(self.roda_sessao)
 
         self.setLayout(vbox)
 
@@ -241,20 +258,24 @@ class SessãoTS(QtGui.QWidget):
         else:
             self.begin_button.setDisabled(False)
 
-    def begin_sess(self):
+    def roda_sessao(self):
         self.file_seq.setDisabled()
         with open(self.file_seq.text()) as f:
             lines = f.readlines()
         lines = [l.strip() for l in lines if l.strip()!=""]
         self.tipo = lines.pop(0)
-        i=0
         self.testes = []
         for i in range(len(lines)//2):
-            self.testes.append((lines[2*i], lines[2*i+1]))
-        with ComparaçãoDialog(self, 'testando', self.tipo, self.testes[0], True) as comparação:
-            result = comparação.exec()
-            print('result: '+str(result))
-            print(comparação.slide.value())
+            self.testes.append((lines[2*i], lines[2*i+1], None))
+        first_test = True
+        for i in range(len(self.testes)):
+            with ComparaçãoDialog(self, '{}/{}'.format(i+1, len(self.testes)),
+                                  self.tipo, self.testes[i],
+                                  first_test) as comparação:
+                result = comparação.exec()
+                print('result: '+str(result))
+                print(comparação.slide.value())
+            first_test = False
 
 
 
