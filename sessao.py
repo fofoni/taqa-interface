@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys, os
-from PyQt4 import QtGui, QtCore, phonon
+from PyQt4 import QtGui, QtCore
+import wave, pyaudio
 
 
 MSGS = {'CODEC': '',  'SNR': ''}
@@ -46,13 +47,6 @@ class FileSelectWidget(QtGui.QWidget):
         self.choose_button.setDisabled(True)
 
 
-def play_file(fname):
-    output = phonon.Phonon.AudioOutput(phonon.Phonon.MusicCategory)
-    m_media = phonon.Phonon.MediaObject()
-    phonon.Phonon.createPath(m_media, output)
-    m_media.setCurrentSource(phonon.Phonon.MediaSource(fname))
-    m_media.play()
-
 
 class ComparaçãoDialog(QtGui.QDialog):
     playbtn_height = 42
@@ -84,19 +78,57 @@ class ComparaçãoDialog(QtGui.QDialog):
             if self.deg_button.isChecked():
                 #TODO: pausar musica do deg
                 self.deg_button.setChecked(False)
-            play_file(self.arquivos[0])
+            self.play_orig()
         else:
-            #TODO: pausar musica
+            self.stop_orig()
             pass
     def click_deg(self, checked):
         if checked:
             if self.orig_button.isChecked():
-                #TODO: pausar musica do orig
+                self.stop_orig()
                 self.orig_button.setChecked(False)
             #TODO: tocar musica
         else:
             #TODO: pausar musica
             pass
+    def __enter__(self):
+        self.p = pyaudio.PyAudio()
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.p.terminate()
+        try:
+            self.wf0.close()
+        except AttributeError:
+            pass
+    def play_orig(self):
+        try:
+            self.wf0.close()
+            del self.wf0
+        except AttributeError:
+            pass
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            del self.stream
+        except AttributeError:
+            pass
+        self.wf0 = wave.open(self.arquivos[0], 'rb')
+        def callback(in_data, frame_count, time_info, status):
+            data = self.wf0.readframes(frame_count)
+            return (data, pyaudio.paContinue)
+        self.stream = self.p.open(
+                    format=self.p.get_format_from_width(self.wf0.getsampwidth()),
+                    channels=self.wf0.getnchannels(),
+                    rate=self.wf0.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+        #self.stream.start_stream()
+    def stop_orig(self):
+        self.stream.stop_stream()
+        self.stream.close()
+        del self.stream
+        self.wf0.close()
+        del self.wf0
 
 # Janela para iniciar uma sessão de Testes Subjetivos
 class SessãoTS(QtGui.QWidget):
@@ -160,8 +192,9 @@ class SessãoTS(QtGui.QWidget):
         self.testes = []
         for i in range(len(lines)//2):
             self.testes.append((lines[2*i], lines[2*i+1]))
-        comparação = ComparaçãoDialog(self, 'coé', self.tipo, self.testes[0])
-        comparação.exec()
+        with ComparaçãoDialog(self, 'coé', self.tipo, self.testes[0]) as comparação:
+            comparação.exec()
+
 
 
 def main():
