@@ -4,6 +4,7 @@
 import sys, os
 from PyQt4 import QtGui, QtCore
 import wave, pyaudio
+import time, threading
 
 
 MSGS = {'CODEC': '',  'SNR': ''}
@@ -47,9 +48,9 @@ class FileSelectWidget(QtGui.QWidget):
         self.choose_button.setDisabled(True)
 
 
-
 class ComparaçãoDialog(QtGui.QDialog):
     playbtn_height = 42
+    sleep_resolution = 0.1
     def __init__(self, parent, índice, tipo, arquivos):
         super().__init__(parent)
         self.arquivos = arquivos
@@ -58,53 +59,48 @@ class ComparaçãoDialog(QtGui.QDialog):
             "<b>{})</b> ".format(índice) + MSGS[tipo],
             self)
         layout.addWidget(self.enunciado)
-        play_buttons = QtGui.QHBoxLayout()
-        self.orig_button = QtGui.QPushButton(self)
-        self.orig_button.setText("Original")
-        self.orig_button.setMinimumHeight(self.playbtn_height)
-        self.orig_button.setCheckable(True)
-        self.orig_button.clicked.connect(self.click_orig)
-        play_buttons.addWidget(self.orig_button)
-        self.deg_button = QtGui.QPushButton(self)
-        self.deg_button.setText("Degradado")
-        self.deg_button.setMinimumHeight(self.playbtn_height)
-        self.deg_button.setCheckable(True)
-        self.deg_button.clicked.connect(self.click_deg)
-        play_buttons.addWidget(self.deg_button)
-        layout.addLayout(play_buttons)
+        play_buttons_hbox = QtGui.QHBoxLayout()
+        self.play_buttons = [QtGui.QPushButton(self) for i in range(2)]
+        self.play_buttons[0].setText("Original")
+        self.play_buttons[0].setMinimumHeight(self.playbtn_height)
+        self.play_buttons[0].setCheckable(True)
+        self.play_buttons[0].clicked.connect(self.click_orig)
+        play_buttons_hbox.addWidget(self.play_buttons[0])
+        self.play_buttons[1].setText("Degradado")
+        self.play_buttons[1].setMinimumHeight(self.playbtn_height)
+        self.play_buttons[1].setCheckable(True)
+        self.play_buttons[1].clicked.connect(self.click_deg)
+        play_buttons_hbox.addWidget(self.play_buttons[1])
+        layout.addLayout(play_buttons_hbox)
         self.setLayout(layout)
-    def click_orig(self, checked):
+    def click_playbtn(self, checked, i):
+        j = 1 if i==0 else 0
         if checked:
-            if self.deg_button.isChecked():
-                #TODO: pausar musica do deg
-                self.deg_button.setChecked(False)
-            self.play_orig()
+            if self.play_buttons[j].isChecked():
+                self.stop(j)
+                #self.play_buttons[j].setChecked(False)
+            self.play(i)
         else:
-            self.stop_orig()
-            pass
-    def click_deg(self, checked):
-        if checked:
-            if self.orig_button.isChecked():
-                self.stop_orig()
-                self.orig_button.setChecked(False)
-            #TODO: tocar musica
-        else:
-            #TODO: pausar musica
-            pass
+            self.stop(i)
+    click_orig = lambda self, checked: self.click_playbtn(checked, 0)
+    click_deg  = lambda self, checked: self.click_playbtn(checked, 1)
     def __enter__(self):
         self.p = pyaudio.PyAudio()
+        self.wf = {}
         return self
     def __exit__(self, exc_type, exc_value, traceback):
         self.p.terminate()
+        del self.p
         try:
-            self.wf0.close()
-        except AttributeError:
+            self.wf[0].close()
+        except KeyError:
             pass
-    def play_orig(self):
+        del self.wf
+    def play(self, i):
         try:
-            self.wf0.close()
-            del self.wf0
-        except AttributeError:
+            self.wf[i].close()
+            del self.wf[i]
+        except KeyError:
             pass
         try:
             self.stream.stop_stream()
@@ -112,23 +108,42 @@ class ComparaçãoDialog(QtGui.QDialog):
             del self.stream
         except AttributeError:
             pass
-        self.wf0 = wave.open(self.arquivos[0], 'rb')
+        self.wf[i] = wave.open(self.arquivos[i], 'rb')
         def callback(in_data, frame_count, time_info, status):
-            data = self.wf0.readframes(frame_count)
-            return (data, pyaudio.paContinue)
+            data = self.wf[i].readframes(frame_count)
+            return (data,
+                    pyaudio.paContinue if len(data)>0 else pyaudio.paComplete)
         self.stream = self.p.open(
-                    format=self.p.get_format_from_width(self.wf0.getsampwidth()),
-                    channels=self.wf0.getnchannels(),
-                    rate=self.wf0.getframerate(),
+                    format=self.p.get_format_from_width(self.wf[i].getsampwidth()),
+                    channels=self.wf[i].getnchannels(),
+                    rate=self.wf[i].getframerate(),
                     output=True,
                     stream_callback=callback)
-        #self.stream.start_stream()
-    def stop_orig(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        del self.stream
-        self.wf0.close()
-        del self.wf0
+        self.thread = threading.Thread(target=ComparaçãoDialog.controlloop,
+                                       args=(self, self.sleep_resolution, i))
+        self.thread.deamon = True
+        self.thread.start()
+    def stop(self, i):
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            del self.stream
+        except AttributeError:
+            pass
+        self.wf[i].close()
+        del self.wf[i]
+        time.sleep(1.4*self.sleep_resolution)
+        del self.thread
+    def complete(self, i):
+        self.play_buttons[i].setChecked(False)
+    @staticmethod
+    def controlloop(dialog, delta, i):
+        try:
+            while 'stream' in dir(dialog) and dialog.stream.is_active():
+                time.sleep(delta)
+        except OSError:
+            pass
+        dialog.complete(i)
 
 # Janela para iniciar uma sessão de Testes Subjetivos
 class SessãoTS(QtGui.QWidget):

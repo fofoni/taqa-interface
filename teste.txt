@@ -1,4 +1,4 @@
 CODEC
 
 /home/pedro/ufrj/avaliacao-qualidade-audio/Arquivos de teste/Berimbau-vl.wav
-/home/pedro/ufrj/avaliacao-qualidade-audio/Arquivos de teste/Sinais Transformados/Berimbau-vl__20kHz__64k.wav
+/home/pedro/ufrj/avaliacao-qualidade-audio/Arquivos de teste/Largo_Schulz-hv.wav
