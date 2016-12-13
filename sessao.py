@@ -8,12 +8,20 @@ import time, threading
 
 
 MSGS = {'CODEC': '',  'SNR': ''}
+SLIDE_LEFT = MSGS.copy()
+SLIDE_RIGHT = MSGS.copy()
 
-MSGS['CODEC']  = "Escute o sinal original e o sinal degradado. O quão diferente"
+MSGS['CODEC'] += "Escute o sinal original e o sinal degradado. O quão diferente"
 MSGS['CODEC'] += " o degradado é do original?"
+SLIDE_LEFT['CODEC'] += "Idêntico"
+SLIDE_RIGHT['CODEC'] += "Muito diferente"
 
-MSGS['SNR']    = "Escute o sinal original e o sinal degradado. O quão pior é o"
+MSGS['SNR']   += "Escute o sinal original e o sinal degradado. O quão pior é o"
 MSGS['SNR']   += " degradado em relação ao original?"
+SLIDE_LEFT['SNR'] += "Imperceptível"
+SLIDE_RIGHT['SNR'] += "Muito pior"
+
+FAIXA_NOTAS = [0, 100]
 
 
 class FileSelectWidget(QtGui.QWidget):
@@ -51,11 +59,12 @@ class FileSelectWidget(QtGui.QWidget):
 class ComparaçãoDialog(QtGui.QDialog):
     playbtn_height = 42
     sleep_resolution = 0.1
-    def __init__(self, parent, índice, tipo, arquivos):
+    def __init__(self, parent, índice, tipo, arquivos, noprev=False):
         super().__init__(parent)
         self.arquivos = arquivos
+        self.listenedto = [False for i in range(2)]
         layout = QtGui.QVBoxLayout()
-        self.enunciado = QtGui.QLabel(
+        self.enunciado = QtGui.QLabel(""
             "<b>{})</b> ".format(índice) + MSGS[tipo],
             self)
         layout.addWidget(self.enunciado)
@@ -72,6 +81,36 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.play_buttons[1].clicked.connect(self.click_deg)
         play_buttons_hbox.addWidget(self.play_buttons[1])
         layout.addLayout(play_buttons_hbox)
+        slider_hbox = QtGui.QHBoxLayout()
+        self.slidel_label = QtGui.QLabel(SLIDE_LEFT[tipo], self)
+        self.slidel_label.setDisabled(True)
+        slider_hbox.addWidget(self.slidel_label)
+        self.slide = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slide.setMinimum(FAIXA_NOTAS[0])
+        self.slide.setMaximum(FAIXA_NOTAS[1])
+        self.slide.setDisabled(True)
+        slider_hbox.addWidget(self.slide)
+        self.slider_label = QtGui.QLabel(SLIDE_RIGHT[tipo], self)
+        self.slider_label.setDisabled(True)
+        slider_hbox.addWidget(self.slider_label)
+        layout.addLayout(slider_hbox)
+        butbox = QtGui.QHBoxLayout()
+        self.prev_but = QtGui.QPushButton(self)
+        self.prev_but.setText("<< Anterior")
+        self.prev_but.setMaximumWidth(100)
+        self.prev_but.clicked.connect(lambda: self.done(0))
+        if noprev:
+            self.prev_but.setDisabled(True)
+        butbox.addWidget(self.prev_but)
+        self.next_but = QtGui.QPushButton(self)
+        self.next_but.setText("Próximo >>")
+        self.next_but.setMaximumWidth(100)
+        self.next_but.clicked.connect(lambda: self.done(1))
+        self.next_but.setDisabled(True)
+        self.slide.sliderReleased.connect(
+            lambda: self.next_but.setDisabled(False))
+        butbox.addWidget(self.next_but)
+        layout.addLayout(butbox)
         self.setLayout(layout)
     def click_playbtn(self, checked, i):
         j = 1 if i==0 else 0
@@ -136,6 +175,11 @@ class ComparaçãoDialog(QtGui.QDialog):
         del self.thread
     def complete(self, i):
         self.play_buttons[i].setChecked(False)
+        self.listenedto[i] = True
+        if False not in self.listenedto:
+            self.slide.setDisabled(False)
+            self.slidel_label.setDisabled(False)
+            self.slider_label.setDisabled(False)
     @staticmethod
     def controlloop(dialog, delta, i):
         try:
@@ -207,8 +251,10 @@ class SessãoTS(QtGui.QWidget):
         self.testes = []
         for i in range(len(lines)//2):
             self.testes.append((lines[2*i], lines[2*i+1]))
-        with ComparaçãoDialog(self, 'coé', self.tipo, self.testes[0]) as comparação:
-            comparação.exec()
+        with ComparaçãoDialog(self, 'testando', self.tipo, self.testes[0], True) as comparação:
+            result = comparação.exec()
+            print('result: '+str(result))
+            print(comparação.slide.value())
 
 
 
