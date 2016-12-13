@@ -1,0 +1,7 @@
+CODEC
+
+a
+b
+
+c
+d
