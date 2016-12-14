@@ -7,6 +7,10 @@ import wave, pyaudio
 import time, threading
 
 
+NEXT_TEST_CODE = 10001
+PREV_TEST_CODE = 10000
+
+
 MSGS = {'CODEC': '',  'SNR': ''}
 SLIDE_LEFT = MSGS.copy()
 SLIDE_RIGHT = MSGS.copy()
@@ -54,6 +58,9 @@ class FileSelectWidget(QtGui.QWidget):
     def setDisabled(self):
         self.file_path_edit.setDisabled(True)
         self.choose_button.setDisabled(True)
+    def setEnabled(self):
+        self.file_path_edit.setDisabled(False)
+        self.choose_button.setDisabled(False)
 
 
 class ComparaçãoDialog(QtGui.QDialog):
@@ -61,7 +68,7 @@ class ComparaçãoDialog(QtGui.QDialog):
     sleep_resolution = 0.03
     def __init__(self, parent, índice, tipo, arquivos, noprev=False):
         super().__init__(parent)
-        self.arquivos = arquivos
+        self.arquivos = arquivos[0:2]
         self.listenedto = [False for i in range(2)]
         self.givenup = False
         layout = QtGui.QVBoxLayout()
@@ -99,14 +106,14 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.prev_but = QtGui.QPushButton(self)
         self.prev_but.setText("<< Anterior")
         self.prev_but.setMaximumWidth(100)
-        self.prev_but.clicked.connect(lambda: self.done(0))
+        self.prev_but.clicked.connect(lambda: self.done(PREV_TEST_CODE))
         if noprev:
             self.prev_but.setDisabled(True)
         butbox.addWidget(self.prev_but)
         self.next_but = QtGui.QPushButton(self)
         self.next_but.setText("Próximo >>")
         self.next_but.setMaximumWidth(100)
-        self.next_but.clicked.connect(lambda: self.done(1))
+        self.next_but.clicked.connect(lambda: self.done(NEXT_TEST_CODE))
         self.next_but.setDisabled(True)
         self.slide.sliderReleased.connect(
             lambda: self.next_but.setDisabled(False))
@@ -266,16 +273,34 @@ class SessãoTS(QtGui.QWidget):
         self.tipo = lines.pop(0)
         self.testes = []
         for i in range(len(lines)//2):
-            self.testes.append((lines[2*i], lines[2*i+1], None))
-        first_test = True
-        for i in range(len(self.testes)):
+            self.testes.append([lines[2*i], lines[2*i+1], None])
+        i = 0
+        while True:
             with ComparaçãoDialog(self, '{}/{}'.format(i+1, len(self.testes)),
                                   self.tipo, self.testes[i],
-                                  first_test) as comparação:
+                                  i==0) as comparação:
                 result = comparação.exec()
-                print('result: '+str(result))
-                print(comparação.slide.value())
-            first_test = False
+            if result==PREV_TEST_CODE:
+                if i==0:
+                    self.file_seq.setEnabled()
+                    del self.tipo
+                    del self.testes
+                    return
+                else:
+                    self.testes[i][2] = comparação.slide.value()
+                    i -= 1
+            elif result==NEXT_TEST_CODE:
+                self.testes[i][2] = comparação.slide.value()
+                if i+1<len(self.testes):
+                    i += 1
+            else: # ESC
+                if i==0:
+                    self.file_seq.setEnabled()
+                    del self.tipo
+                    del self.testes
+                    return
+                else:
+                    i -= 1
 
 
 
