@@ -66,7 +66,7 @@ class FileSelectWidget(QtGui.QWidget):
 class ComparaçãoDialog(QtGui.QDialog):
     playbtn_height = 42
     sleep_resolution = 0.03
-    def __init__(self, parent, índice, tipo, arquivos, noprev=False):
+    def __init__(self, parent, índice, tipo, arquivos, noprev=False, nota=None):
         super().__init__(parent)
         self.arquivos = arquivos[0:2]
         self.listenedto = [False for i in range(2)]
@@ -91,15 +91,18 @@ class ComparaçãoDialog(QtGui.QDialog):
         layout.addLayout(play_buttons_hbox)
         slider_hbox = QtGui.QHBoxLayout()
         self.slidel_label = QtGui.QLabel(SLIDE_LEFT[tipo], self)
-        self.slidel_label.setDisabled(True)
         slider_hbox.addWidget(self.slidel_label)
         self.slide = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slide.setMinimum(FAIXA_NOTAS[0])
         self.slide.setMaximum(FAIXA_NOTAS[1])
-        self.slide.setDisabled(True)
         slider_hbox.addWidget(self.slide)
         self.slider_label = QtGui.QLabel(SLIDE_RIGHT[tipo], self)
-        self.slider_label.setDisabled(True)
+        if nota is None:
+            self.slide.setDisabled(True)
+            self.slidel_label.setDisabled(True)
+            self.slider_label.setDisabled(True)
+        else:
+            self.slide.setValue(nota)
         slider_hbox.addWidget(self.slider_label)
         layout.addLayout(slider_hbox)
         butbox = QtGui.QHBoxLayout()
@@ -114,7 +117,8 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.next_but.setText("Próximo >>")
         self.next_but.setMaximumWidth(100)
         self.next_but.clicked.connect(lambda: self.done(NEXT_TEST_CODE))
-        self.next_but.setDisabled(True)
+        if nota is None:
+            self.next_but.setDisabled(True)
         self.slide.sliderReleased.connect(
             lambda: self.next_but.setDisabled(False))
         self.slide.valueChanged.connect(
@@ -252,6 +256,7 @@ class SessãoTS(QtGui.QWidget):
         self.line_tester.textChanged.connect(self.valida_campos)
         self.line_super.textChanged.connect(self.valida_campos)
         self.begin_button.clicked.connect(self.roda_sessao)
+        self.save_button.clicked.connect(self.save_result)
 
         self.setLayout(vbox)
 
@@ -277,8 +282,8 @@ class SessãoTS(QtGui.QWidget):
         i = 0
         while True:
             with ComparaçãoDialog(self, '{}/{}'.format(i+1, len(self.testes)),
-                                  self.tipo, self.testes[i],
-                                  i==0) as comparação:
+                                  self.tipo, self.testes[i], i==0,
+                                  self.testes[i][2]) as comparação:
                 result = comparação.exec()
             if result==PREV_TEST_CODE:
                 if i==0:
@@ -293,6 +298,8 @@ class SessãoTS(QtGui.QWidget):
                 self.testes[i][2] = comparação.slide.value()
                 if i+1<len(self.testes):
                     i += 1
+                else:
+                    break
             else: # ESC
                 if i==0:
                     self.file_seq.setEnabled()
@@ -301,6 +308,19 @@ class SessãoTS(QtGui.QWidget):
                     return
                 else:
                     i -= 1
+        self.save_button.setDisabled(False)
+        self.begin_button.setText("Refazer")
+        self.towrite  = self.tipo + "\n"
+        self.towrite += self.line_tester.text() + "\n"
+        self.towrite += self.line_super.text() + "\n"
+        for i in range(len(self.testes)):
+            self.towrite += "\n{}\n{}\n{}\n".format(*self.testes[i])
+
+    def save_result(self):
+        fname = QtGui.QFileDialog.getSaveFileName(
+            self, "Escolha um arquivo para salvar os resultados.", os.getcwd())
+        with open(fname, "w") as f:
+            print(self.towrite, file=f)
 
 
 
