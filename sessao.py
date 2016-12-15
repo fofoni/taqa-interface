@@ -15,15 +15,15 @@ MSGS = {'CODEC': '',  'SNR': ''}
 SLIDE_LEFT = MSGS.copy()
 SLIDE_RIGHT = MSGS.copy()
 
-MSGS['CODEC'] += "Escute o sinal original e o sinal degradado. O quão diferente"
-MSGS['CODEC'] += " o degradado é do original?"
-SLIDE_LEFT['CODEC'] += "Idêntico"
-SLIDE_RIGHT['CODEC'] += "Muito diferente"
+MSGS['CODEC'] += "Escute os dois sinais a seguir. Avalie a diferença"
+MSGS['CODEC'] += " do MODIFICADO em relação ao ORIGINAL"
+SLIDE_LEFT['CODEC'] += "Diferença Mínima"
+SLIDE_RIGHT['CODEC'] += "Diferença Máxima"
 
-MSGS['SNR']   += "Escute o sinal original e o sinal degradado. O quão pior é o"
-MSGS['SNR']   += " degradado em relação ao original?"
-SLIDE_LEFT['SNR'] += "Imperceptível"
-SLIDE_RIGHT['SNR'] += "Muito pior"
+MSGS['SNR']   += "Escute os dois sinais a seguir. Avalie o grau de"
+MSGS['SNR']   += " degradação do MODIFICADO em relação ao ORIGINAL."
+SLIDE_LEFT['SNR'] += "Degradação Mínima"
+SLIDE_RIGHT['SNR'] += "Degradação Máxima"
 
 FAIXA_NOTAS = [0, 100]
 
@@ -78,12 +78,12 @@ class ComparaçãoDialog(QtGui.QDialog):
         layout.addWidget(self.enunciado)
         play_buttons_hbox = QtGui.QHBoxLayout()
         self.play_buttons = [QtGui.QPushButton(self) for i in range(2)]
-        self.play_buttons[0].setText("Original")
+        self.play_buttons[0].setText("ORIGINAL")
         self.play_buttons[0].setMinimumHeight(self.playbtn_height)
         self.play_buttons[0].setCheckable(True)
         self.play_buttons[0].clicked.connect(self.click_orig)
         play_buttons_hbox.addWidget(self.play_buttons[0])
-        self.play_buttons[1].setText("Degradado")
+        self.play_buttons[1].setText("MODIFICADO")
         self.play_buttons[1].setMinimumHeight(self.playbtn_height)
         self.play_buttons[1].setCheckable(True)
         self.play_buttons[1].clicked.connect(self.click_deg)
