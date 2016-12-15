@@ -20,12 +20,20 @@ TODO:
 2. nao deixar trocar no meio da musica                   OK 23:55
 3. clicar na barrinha                                     - 23:58
 >>> dá mt trabalho. A solução está aqui:
-    http://stackoverflow.com/questions/11132597/qslider-mouse-direct-jump?rq=1
+    http://stackoverflow.com/questions/11132597/qslider-mouse-direct-jump
 4. CODEC-TELEFONE                                        OK 00:00
 5. Colocar horário de início e de fim no resultado       OK 00:13
-6. upsample nos 4khz
-7. gerar sinais de treinamento
-8. Equalizar potencia
+7. gerar sinais de treinamento                           OK 05:58
+   - referencia (44100kHz, 16-bit WAV)                     (05:26)
+   - 20, 35, 50dB                                          (05:33)
+   - 64, 128, 320k                                         (05:46)
+   - 4kHz                                                  (05:54)
+   - 4kHz, 64k                                             (05:58)
+6. upsample nos 4khz                                        06:14
+   - referencias e mp3s
+8. Equalizar potencia                                       07:37
+   - pra escolher a normalização, olha só pros defaults. Então, aplica
+     a normalização a todo mundo
 """
 
 
