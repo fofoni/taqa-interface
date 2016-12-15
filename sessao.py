@@ -160,13 +160,14 @@ class ComparaçãoDialog(QtGui.QDialog):
                 self.givenup = True
                 self.stop(j)
                 self.play_buttons[j].setChecked(False)
+            self.play_buttons[j].setDisabled(True)
             self.givenup = False
             self.play(i)
         else:
             self.givenup = True
             self.stop(i)
-        self.play_buttons[0].setDisabled(False)
-        self.play_buttons[1].setDisabled(False)
+            self.play_buttons[j].setDisabled(False)
+        self.play_buttons[i].setDisabled(False)
     click_orig = lambda self, checked: self.click_playbtn(checked, 0)
     click_deg  = lambda self, checked: self.click_playbtn(checked, 1)
     def __enter__(self):
@@ -221,12 +222,14 @@ class ComparaçãoDialog(QtGui.QDialog):
         time.sleep(1.4*self.sleep_resolution)
         del self.thread
     def complete(self, i):
+        j = 1 if i==0 else 0
         self.play_buttons[i].setChecked(False)
         self.listenedto[i] = True
         if False not in self.listenedto:
             self.slide.setDisabled(False)
             self.slidel_label.setDisabled(False)
             self.slider_label.setDisabled(False)
+        self.play_buttons[j].setDisabled(False)
     @staticmethod
     def controlloop(dialog, delta, i):
         try:
@@ -355,7 +358,6 @@ def main():
 
     new_font = app.font();
     new_font.setPointSize(15)
-    #new_font.setWeight( int ** ); //your option
     app.setFont(new_font)
 
     w = SessãoTS()
