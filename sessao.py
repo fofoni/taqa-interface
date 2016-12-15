@@ -5,6 +5,7 @@ import sys, os
 from PyQt4 import QtGui, QtCore
 import wave, pyaudio
 import time, threading
+from datetime import datetime
 
 
 NEXT_TEST_CODE = 10001
@@ -16,10 +17,12 @@ PREV_TEST_CODE = 10000
 """
 TODO:
 1. aumentar                                              OK 20:00
-2. nao deixar trocar no meio da musica
-3. clicar na barrinha
-4. CODEC-TELEFONE
-5. Colocar horário de início e de fim no resultado
+2. nao deixar trocar no meio da musica                   OK 23:55
+3. clicar na barrinha                                     - 23:58
+>>> dá mt trabalho. A solução está aqui:
+    http://stackoverflow.com/questions/11132597/qslider-mouse-direct-jump?rq=1
+4. CODEC-TELEFONE                                        OK 00:00
+5. Colocar horário de início e de fim no resultado       OK 00:13
 6. upsample nos 4khz
 7. gerar sinais de treinamento
 8. Equalizar potencia
@@ -28,7 +31,7 @@ TODO:
 
 
 
-MSGS = {'CODEC': '',  'SNR': ''}
+MSGS = {'CODEC': '',  'SNR': '', 'CODEC4KHZ': ''}
 SLIDE_LEFT = MSGS.copy()
 SLIDE_RIGHT = MSGS.copy()
 
@@ -36,6 +39,10 @@ MSGS['CODEC'] += "Escute os dois sinais a seguir. Avalie a diferença"
 MSGS['CODEC'] += " do MODIFICADO em relação ao ORIGINAL"
 SLIDE_LEFT['CODEC'] += "Diferença Mínima"
 SLIDE_RIGHT['CODEC'] += "Diferença Máxima"
+
+MSGS['CODEC4KHZ'] = MSGS['CODEC']
+SLIDE_LEFT['CODEC4KHZ'] = SLIDE_LEFT['CODEC']
+SLIDE_RIGHT['CODEC4KHZ'] = SLIDE_RIGHT['CODEC']
 
 MSGS['SNR']   += "Escute os dois sinais a seguir. Avalie o grau de"
 MSGS['SNR']   += " degradação do MODIFICADO em relação ao ORIGINAL."
@@ -299,6 +306,7 @@ class SessãoTS(QtGui.QWidget):
             self.begin_button.setDisabled(False)
 
     def roda_sessao(self):
+        init_time = datetime.now()
         self.file_seq.setDisabled()
         with open(self.file_seq.text()) as f:
             lines = f.readlines()
@@ -336,11 +344,14 @@ class SessãoTS(QtGui.QWidget):
                     return
                 else:
                     i -= 1
+        end_time = datetime.now()
         self.save_button.setDisabled(False)
         self.begin_button.setText("Refazer")
         self.towrite  = self.tipo + "\n"
-        self.towrite += self.line_tester.text() + "\n"
-        self.towrite += self.line_super.text() + "\n"
+        self.towrite += "Subject:    " + self.line_tester.text() + "\n"
+        self.towrite += "Supervisor: " + self.line_super.text() + "\n"
+        self.towrite += "Início:     " + str(init_time) + "\n"
+        self.towrite += "Fim:        " + str(end_time) + "\n"
         for i in range(len(self.testes)):
             self.towrite += "\n{}\n{}\n{}\n".format(*self.testes[i])
 
