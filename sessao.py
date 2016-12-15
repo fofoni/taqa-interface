@@ -11,6 +11,23 @@ NEXT_TEST_CODE = 10001
 PREV_TEST_CODE = 10000
 
 
+
+
+"""
+TODO:
+1. aumentar                                              OK 20:00
+2. nao deixar trocar no meio da musica
+3. clicar na barrinha
+4. CODEC-TELEFONE
+5. Colocar horário de início e de fim no resultado
+6. upsample nos 4khz
+7. gerar sinais de treinamento
+8. Equalizar potencia
+"""
+
+
+
+
 MSGS = {'CODEC': '',  'SNR': ''}
 SLIDE_LEFT = MSGS.copy()
 SLIDE_RIGHT = MSGS.copy()
@@ -64,7 +81,7 @@ class FileSelectWidget(QtGui.QWidget):
 
 
 class ComparaçãoDialog(QtGui.QDialog):
-    playbtn_height = 42
+    playbtn_height = 400
     sleep_resolution = 0.03
     def __init__(self, parent, índice, tipo, arquivos, noprev=False, nota=None):
         super().__init__(parent)
@@ -75,6 +92,10 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.enunciado = QtGui.QLabel(""
             "<b>{})</b> ".format(índice) + MSGS[tipo],
             self)
+        playbut_ss = """QPushButton {
+            font-size: 28pt;
+            font-weight: bold;
+        }"""
         layout.addWidget(self.enunciado)
         play_buttons_hbox = QtGui.QHBoxLayout()
         self.play_buttons = [QtGui.QPushButton(self) for i in range(2)]
@@ -82,11 +103,13 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.play_buttons[0].setMinimumHeight(self.playbtn_height)
         self.play_buttons[0].setCheckable(True)
         self.play_buttons[0].clicked.connect(self.click_orig)
+        self.play_buttons[0].setStyleSheet(playbut_ss)
         play_buttons_hbox.addWidget(self.play_buttons[0])
         self.play_buttons[1].setText("MODIFICADO")
         self.play_buttons[1].setMinimumHeight(self.playbtn_height)
         self.play_buttons[1].setCheckable(True)
         self.play_buttons[1].clicked.connect(self.click_deg)
+        self.play_buttons[1].setStyleSheet(playbut_ss)
         play_buttons_hbox.addWidget(self.play_buttons[1])
         layout.addLayout(play_buttons_hbox)
         slider_hbox = QtGui.QHBoxLayout()
@@ -108,14 +131,14 @@ class ComparaçãoDialog(QtGui.QDialog):
         butbox = QtGui.QHBoxLayout()
         self.prev_but = QtGui.QPushButton(self)
         self.prev_but.setText("<< Anterior")
-        self.prev_but.setMaximumWidth(100)
+        self.prev_but.setMaximumWidth(300)
         self.prev_but.clicked.connect(lambda: self.done(PREV_TEST_CODE))
         if noprev:
             self.prev_but.setDisabled(True)
         butbox.addWidget(self.prev_but)
         self.next_but = QtGui.QPushButton(self)
         self.next_but.setText("Próximo >>")
-        self.next_but.setMaximumWidth(100)
+        self.next_but.setMaximumWidth(300)
         self.next_but.clicked.connect(lambda: self.done(NEXT_TEST_CODE))
         if nota is None:
             self.next_but.setDisabled(True)
@@ -126,6 +149,8 @@ class ComparaçãoDialog(QtGui.QDialog):
         butbox.addWidget(self.next_but)
         layout.addLayout(butbox)
         self.setLayout(layout)
+        self.setMinimumWidth(1500)
+        self.setMinimumHeight(800)
     def click_playbtn(self, checked, i):
         j = 1 if i==0 else 0
         self.play_buttons[0].setDisabled(True)
@@ -327,6 +352,11 @@ class SessãoTS(QtGui.QWidget):
 def main():
 
     app = QtGui.QApplication(sys.argv)
+
+    new_font = app.font();
+    new_font.setPointSize(15)
+    #new_font.setWeight( int ** ); //your option
+    app.setFont(new_font)
 
     w = SessãoTS()
     w.setFocus()
