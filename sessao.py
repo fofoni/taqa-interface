@@ -166,6 +166,7 @@ class ComparaçãoDialog(QtGui.QDialog):
         self.setLayout(layout)
         self.setMinimumWidth(1500)
         self.setMinimumHeight(800)
+        #self.next_but.setDisabled(False)
     def click_playbtn(self, checked, i):
         j = 1 if i==0 else 0
         self.play_buttons[0].setDisabled(True)
@@ -278,6 +279,7 @@ class SessãoTS(QtGui.QWidget):
             <li>Assinar a lista</li>
             <li>Não mexer no volume</li>
             <li>Arrastar o slider</li>
+            <li>Desligar o ar</li>
         </ul>""", self)
         vbox.addWidget(self.reminder)
 
@@ -369,6 +371,15 @@ class SessãoTS(QtGui.QWidget):
         self.towrite += "Fim:        " + str(end_time) + "\n"
         for i in range(len(self.testes)):
             self.towrite += "\n{}\n{}\n{}\n".format(*self.testes[i])
+        thanks_window = QtGui.QMessageBox(self)
+        thanks_window.setText("Obrigado!")
+        thanks_window.setInformativeText(
+            "Por favor não feche nenhuma janela :) e chame um dos"
+            " responsáveis.")
+        thanks_window.setIcon(QtGui.QMessageBox.Information)
+        thanks_window.setMinimumWidth(1500)
+        thanks_window.setMinimumHeight(800)
+        thanks_window.exec()
 
     def save_result(self):
         fname = QtGui.QFileDialog.getSaveFileName(
