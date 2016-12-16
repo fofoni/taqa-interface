@@ -274,11 +274,18 @@ class SessãoTS(QtGui.QWidget):
         self.file_seq = FileSelectWidget(parent=self, parentWindow=self)
         vbox.addWidget(self.file_seq)
 
+        self.reminder = QtGui.QLabel("""Lembretes:<ul>
+            <li>Assinar a lista</li>
+            <li>Não mexer no volume</li>
+            <li>Arrastar o slider</li>
+        </ul>""", self)
+        vbox.addWidget(self.reminder)
+
         fbox = QtGui.QFormLayout()
         self.label_tester = QtGui.QLabel("Nome do testador:", self)
         self.line_tester = QtGui.QLineEdit(self)
         fbox.addRow(self.label_tester, self.line_tester)
-        self.label_super = QtGui.QLabel("Nome do supervisor:", self)
+        self.label_super = QtGui.QLabel("Nome do responsável:", self)
         self.line_super = QtGui.QLineEdit(self)
         fbox.addRow(self.label_super, self.line_super)
         vbox.addLayout(fbox)
