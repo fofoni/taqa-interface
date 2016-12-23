@@ -205,6 +205,7 @@ class Dados:
                 s += "{}, ".format(nota)
             s += "\n"
         s += "];\n"
+        s += "NOTAS = (100-NOTAS)*4/100+1; % mapeamento para MOS\n"
         s += "\n"
         s += "TEMPOS = [\n"
         for n in self.nomes:
