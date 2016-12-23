@@ -12,7 +12,7 @@ boxplot(notas)
 axis([0,45, 0.9, 5.1]);
 xlabel({ 'Número do Sinal', '(olhar tabela de correspondência)'});
 ylabel('Nota na escala MOS');
-title('Histograma das notas para cada sinal de teste');
+title('Notas para cada sinal de teste');
 
 
 nomeSinal = {};
@@ -51,9 +51,9 @@ end
 boxplot(notasColuna, parametros);
 xlabel('Parâmetro testado');
 ylabel('Nota na escala MOS');
-title('Histograma das notas por parâmetro testado');
+title('Notas por parâmetro testado');
 figure;
 boxplot(notasColuna, parametros, 'GroupOrder', {'20dB', '35dB', '50dB', '64k', '128k', '320k', 'CODEC 4K'});
 xlabel('Parâmetro testado');
 ylabel('Nota na escala MOS');
-title('Histograma das notas por parâmetro testado'); 
+title('Notas por parâmetro testado'); 
